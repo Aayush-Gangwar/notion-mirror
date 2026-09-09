@@ -1,0 +1,16 @@
+[project]
+name = "notion-mirror"
+version = "0.1.0"
+description = "Read-only, Git-backed Markdown mirror of a Notion workspace"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+
+dependencies = [
+    "notion-client>=2.4.0",
+    "python-dotenv>=1.1.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+notion-mirror = "notion_mirror.main:main"
