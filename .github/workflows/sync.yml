@@ -1,0 +1,55 @@
+name: Sync Notion
+
+"on":
+  # Manual trigger only by default - safe for this public template, since
+  # forks never inherit secrets and nothing runs until a NOTION_TOKEN is
+  # configured. To sync automatically in your own fork/clone, add a
+  # schedule back once your secret is set, e.g.:
+  #
+  #   schedule:
+  #     - cron: "0 3 * * *"   # 03:00 UTC daily - https://crontab.guru
+  workflow_dispatch: {}
+
+# Needed so the workflow's own GITHUB_TOKEN can push the synced notes
+# back to this repository.
+permissions:
+  contents: write
+
+# Avoid two overlapping runs (e.g. a manual trigger landing during the
+# scheduled one) both trying to sync/commit/push at once.
+concurrency:
+  group: notion-mirror-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install notion-mirror
+        run: pip install -e .
+
+      - name: Run sync
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: notion-mirror
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notes .notion-sync
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Sync Notion workspace"
+            git push
+          fi
